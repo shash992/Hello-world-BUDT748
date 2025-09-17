@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Management</title>
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h2>User Management System</h2>
+        
+        <div id="userForm">
+            <form action="/user" method="post">
+                <div class="form-group">
+                    <label for="name">Name:</label>
+                    <input type="text" class="form-control" id="name" placeholder="Enter name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    <input type="email" class="form-control" id="email" placeholder="Enter email" name="email" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </form>
+        </div>
+        
+        <hr>
+        
+        <h3>Users</h3>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Dynamic User Rows Here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // Function to fetch users and update the table
+            function loadUsers() {
+                fetch('/users')
+                    .then(response => response.json())
+                    .then(users => {
+                        const tableBody = $('table tbody');
+                        tableBody.empty(); // Clear the table before adding new rows
+                        
+                        users.forEach(user => {
+                            // Append each user as a row in the table
+                            tableBody.append(`
+                                <tr>
+                                    <td>${user.id}</td>
+                                    <td>${user.name}</td>
+                                    <td>${user.email}</td>
+                                    <td>
+                                        <button class="btn btn-danger btn-sm" onclick="deleteUser(${user.id})">
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            `);
+                        });
+                    })
+                    .catch(error => console.error('Error loading users:', error));
+            }
+
+            // Function to delete a user
+            window.deleteUser = function(id) {
+                $.ajax({
+                    url: `/user/${id}`,
+                    type: 'DELETE',
+                    success: function(result) {
+                        loadUsers(); // Reload users after delete
+                    },
+                    error: function(xhr) {
+                        console.log('Error:', xhr.responseText);
+                    }
+                });
+            }
+
+            // Handle form submission
+            $("#userForm").submit(function(event) {
+                event.preventDefault(); // Prevent the default form submission
+                
+                var formData = {
+                    'name': $('input[name=name]').val(),
+                    'email': $('input[name=email]').val()
+                };
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/user',
+                    contentType: 'application/json', // Set the content type to JSON
+                    data: JSON.stringify(formData), // Convert formData object to JSON string
+                    dataType: 'json',
+                    success: function(response) {
+                        console.log('Success:', response);
+                        $('#userForm')[0].reset(); // Clear the form
+                        loadUsers(); // Reload the users table
+                    },
+                    error: function(xhr) {
+                        console.log('Error:', xhr.responseText);
+                    }
+                });
+            });
+
+            // Load users on initial page load
+            loadUsers();
+        });
+    </script>
+</body>
+</html>
